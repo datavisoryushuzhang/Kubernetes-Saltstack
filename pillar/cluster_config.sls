@@ -1,5 +1,5 @@
 kubernetes:
-  version: v1.11.2
+  version: v1.13.6
   domain: cluster.local
   master:
 #    count: 1
@@ -8,15 +8,13 @@ kubernetes:
     count: 3
     cluster:
       name: kubernetes-cluster
-      node01:
-        hostname: master01.domain.tld
-        ipaddr: 10.240.0.10
-      node02:
-        hostname: master02.domain.tld
-        ipaddr: 10.240.0.20
-      node03:
-        hostname: master03.domain.tld
-        ipaddr: 10.240.0.30
+      nodes:
+        - hostname: master01.domain.tld
+          ipaddr: 10.240.0.10
+        - hostname: master02.domain.tld
+          ipaddr: 10.240.0.20
+        - hostname: master03.domain.tld
+          ipaddr: 10.240.0.30
     encryption-key: 'w3RNESCMG+o3GCHTUcrQUUdq6CFV72q/Zik9LAO8uEc='
     etcd:
       version: v3.3.9
@@ -51,3 +49,6 @@ kubernetes:
     dashboard-version: v1.10.0
     admin-token: Haim8kay1rarCHANGEMEHaim8kay11ra
     kubelet-token: ahT1eipae1wiCHANGEMEahT1eipa1e1w
+    image-repository: 
+      dns: docker-registry.datavisor.cn
+      ip: 54.191.46.142
