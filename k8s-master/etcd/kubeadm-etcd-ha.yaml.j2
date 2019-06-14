@@ -1,5 +1,5 @@
 {%- set hostname = salt['grains.get']('fqdn') -%}
-{%- set ip = salt['grains.get']('fqdn_ip4') -%}
+{%- set ip = salt['grains.get']('fqdn_ip4')|first -%}
 {%- set nodes =  pillar['kubernetes']['master']['cluster']['nodes'] -%} 
 {#- set node01ip =  pillar['kubernetes']['master']['cluster']['node01']['ipaddr'] -#} 
 {#- set node02ip =  pillar['kubernetes']['master']['cluster']['node02']['ipaddr'] -#} 
@@ -7,30 +7,31 @@
 {#- set node01 =  pillar['kubernetes']['master']['cluster']['node01']['hostname'] -#} 
 {#- set node02 =  pillar['kubernetes']['master']['cluster']['node02']['hostname'] -#} 
 {#- set node03 =  pillar['kubernetes']['master']['cluster']['node03']['hostname'] -#} 
-{%- set clustername =  pillar['kubernetes']['master']['cluster']['name'] | default("kubernetes-cluster")-%}
-{% for item in nodes -%}
-  {% if item.hostname == hostname %}{%- set currentNode = item}{% endif %}
-{%- endfor %}
-{% set image_repository = pillar['kubernetes']['global']['image-repository']%}}
-
+{%- set clustername =  pillar['kubernetes']['master']['cluster']['name'] | default("kubernetes-cluster") -%}
+{% set image_repository = pillar['kubernetes']['global']['image-repository'] %}
+---
 apiVersion: "kubeadm.k8s.io/v1beta1"
 kind: ClusterConfiguration
 kubernetesVersion: v1.13.6
 etcd:
   local:
     serverCertSANs:
-      - "{{ currentNode.ipaddr }}"
+      - "{{ ip }}"
     peerCertSANs:
-      - "{{ currentNode.ipaddr }}"
+      - "{{ ip }}"
     extraArgs:
       initial-cluster: |-
-{% for item in nodes -%}
-  {{ item.hostname | default("etcd" + nodes.index(item) | string) }}=https://{{ item }}:2380{% if not loop.last %},{% endif %}
-{%- endfor %}
+        {% for item in nodes -%}
+        {{ item['etcd-member-name'] }}=https://{{ item.ipaddr }}:2380{% if not loop.last %},{% endif %}
+        {%- endfor %}
       initial-cluster-state: new
-      name: {{ hostname | default("etcd" + nodes.index(currentNode) | string) }}
-      listen-peer-urls: https://{{ currentNode.ipaddr }}:2380
-      listen-client-urls: https://{{ currentNode.ipaddr }}:2379
-      advertise-client-urls: https://{{ currentNode.ipaddr }}:2379
-      initial-advertise-peer-urls: https://{{ currentNode.ipaddr }}:2380
+      {% for item in nodes -%}
+      {% if item.ipaddr == ip %}
+      name: {{ item['etcd-member-name'] }}
+      {% endif %}
+      {%- endfor %}
+      listen-peer-urls: https://{{ ip }}:2380
+      listen-client-urls: https://{{ ip }}:2379
+      advertise-client-urls: https://{{ ip }}:2379
+      initial-advertise-peer-urls: https://{{ ip }}:2380
 imageRepository: {{ image_repository.dns }}

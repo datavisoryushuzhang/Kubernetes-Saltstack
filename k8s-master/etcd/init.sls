@@ -1,5 +1,13 @@
-{%- set etcdVersion = pillar['kubernetes']['master']['etcd']['version'] -%}
+{%- set etcd = pillar['kubernetes']['master']['etcd'] -%}
 {%- set masterCount = pillar['kubernetes']['master']['count'] -%}
+{%- set datavisorDir = pillar['kubernetes']['datavisor']['dir'] -%}
+{%- set imageRepository = pillar['kubernetes']['global']['image-repository'] -%}
+{%- set nodes =  pillar['kubernetes']['master']['cluster']['nodes'] -%}
+{% if masterCount == 1 %}
+  {%  set etcdConfig = datavisorDir + "/kubeadm-etcd.yaml" %}
+{% else %}
+  {% set etcdConfig = datavisorDir + "/kubeadm-etcd-ha.yaml" %}
+{% endif %}
 
 /etc/etcd:
   file.directory:
@@ -7,50 +15,51 @@
     - group: root
     - dir_mode: 750
 
-/etc/etcd/kubernetes-key.pem:
-  file.symlink:
-    - target: /var/lib/kubernetes/kubernetes-key.pem
-/etc/etcd/kubernetes.pem:
-  file.symlink:
-    - target: /var/lib/kubernetes/kubernetes.pem
-/etc/etcd/ca.pem:
-  file.symlink:
-    - target: /var/lib/kubernetes/ca.pem
-
-etcd-latest-archive:
-  archive.extracted:
-    - name: /opt/
-    - source: https://github.com/coreos/etcd/releases/download/{{ etcdVersion }}/etcd-{{ etcdVersion }}-linux-amd64.tar.gz
-    - skip_verify: true
-    - archive_format: tar
-
-/usr/bin/etcd:
-  file.symlink:
-    - target: /opt/etcd-{{ etcdVersion }}-linux-amd64/etcd
-/usr/bin/etcdctl:
-  file.symlink:
-    - target: /opt/etcd-{{ etcdVersion }}-linux-amd64/etcdctl
-
-{% if masterCount == 1 %}
-/etc/systemd/system/etcd.service:
-  file.managed:
-    - source: salt://{{ slspath }}/etcd.service
-    - user: root
-    - template: jinja
-    - group: root
-    - mode: 644
-{% elif masterCount == 3 %}
-/etc/systemd/system/etcd.service:
-  file.managed:
-    - source: salt://{{ slspath }}/etcd-ha.service
-    - user: root
-    - template: jinja
-    - group: root
-    - mode: 644
+{% if imageRepository.ip %}
+private-docker-registry:
+  host.present:
+    - ip: 
+      - {{ imageRepository.ip }}
+    - names:
+      - {{ imageRepository.dns | regex_replace('\/.*$', '') }}
 {% endif %}
 
-etcd:
+/etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf:
+  file.managed:
+    - source: salt://{{ slspath }}/20-etcd-service-manager.conf.j2
+    - user: root
+    - template: jinja
+    - group: root
+    - mode: 644
+
+kubelet:
   service.running:
     - enable: True
+    - reload: True
     - watch:
-      - /etc/systemd/system/etcd.service
+      - /etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf
+
+{% for key, value in etcd.certs %}
+remove old {{ key }}:
+  file.absent:
+    - name: {{ pillar['kubernetes']['master']['certs-dir']}}/{{ value }}
+{% endfor %}
+
+{{ etcdConfig }}:
+  file.managed:
+    - source: salt://{{ slspath }}/kubeadm-etcd.yaml.j2
+    - user: root
+    - template: jinja
+    - group: root
+    - mode: 644
+
+start etcd:
+  cmd.run:
+    - name: >-
+      kubeadm init
+      phase etcd
+      local
+      --config={{ datavisor_dir }}/{{ etcdConfig }}
+
+
+

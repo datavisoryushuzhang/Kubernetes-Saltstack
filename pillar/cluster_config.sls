@@ -7,17 +7,41 @@ kubernetes:
 #    ipaddr: 10.240.0.10
     count: 3
     cluster:
-      name: kubernetes-cluster
+      name: k8s-aws-cn-dev-test
       nodes:
-        - hostname: master01.domain.tld
-          ipaddr: 10.240.0.10
-        - hostname: master02.domain.tld
-          ipaddr: 10.240.0.20
-        - hostname: master03.domain.tld
-          ipaddr: 10.240.0.30
+        - ipaddr: 10.201.14.186
+          etcd-member-name: etcd0
+        - ipaddr: 10.201.31.9
+          etcd-member-name: etcd1
+        - ipaddr: 10.201.38.35
+          etcd-member-name: etcd2
     encryption-key: 'w3RNESCMG+o3GCHTUcrQUUdq6CFV72q/Zik9LAO8uEc='
+    certs-dir: /etc/kubernetes/pki
     etcd:
       version: v3.3.9
+    certs:
+      etcd-ca-cert: etcd/ca.crt
+      etcd-ca-key: etcd/ca.key
+      server-cert: etcd/server.crt
+      server-key: etcd/server.key
+      healthcheck-cert: etcd/healthcheck.crt
+      healthcheck-key: etcd/healthcheck.key
+      client-cert: etcd/client.crt
+      client-key: etcd/client.key
+      apiserver-etcd-client-cert: apiserver-etcd-client.crt
+      apiserver-etcd-client-key: apiserver-etcd-client.key
+      apiserver-cert: apiserver.crt
+      apiserver-key: apiserver.key
+      apiserver-kubelet-client-cert: apiserver-kubelet-client.crt
+      apiserver-kubelet-client-key: apiserver-kubelet-client.key
+      ca-cert: ca.crt
+      ca-key: ca.key
+      front-proxy-ca-cert: front-proxy-ca.crt
+      front-proxy-ca-key: front-proxy-ca.key
+      front-proxy-client-cert: front-proxy-client.crt
+      front-proxy-client-key: front-proxy-client.key
+      sa-key: sa.key
+      sa-public-key: sa.pub
   worker:
     runtime:
       provider: docker
@@ -52,3 +76,5 @@ kubernetes:
     image-repository: 
       dns: docker-registry.datavisor.cn
       ip: 54.191.46.142
+  datavisor:
+    dir: /opt/datavisor
