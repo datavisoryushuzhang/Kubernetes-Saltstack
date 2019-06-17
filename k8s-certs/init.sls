@@ -13,5 +13,6 @@
     - source:  salt://{{ slspath }}/{{value}}
     - group: root
     - mode: 644
+    - makedirs: True
 {% endif%}
 {% endfor %}
