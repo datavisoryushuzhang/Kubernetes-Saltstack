@@ -41,8 +41,6 @@ The configuration is done to use the Salt-master as the Kubernetes master. You c
 
 The Minion's roles are matched with `Salt Grains` (kind of inventory), so you need to define theses grains on your servers :
 
-If you want a small cluster, a master can be a worker too. 
-
 ```bash
 # Kubernetes masters
 cat << EOF > /etc/salt/grains
@@ -52,13 +50,6 @@ EOF
 # Kubernetes workers
 cat << EOF > /etc/salt/grains
 role: k8s-worker
-EOF
-
-# Kubernetes master & workers
-cat << EOF > /etc/salt/grains
-role: 
-  - k8s-master
-  - k8s-worker
 EOF
 
 systemctl restart salt-minion 
@@ -79,7 +70,7 @@ etcd-1               Healthy   {"health": "true"}
 etcd-2               Healthy   {"health": "true"}
 
 # Apply Kubernetes worker configurations
-salt -G 'role:k8s-worker' state.highstate pillar='{"ca-sha256": "${CA_SHA256}"}'
+salt -G 'role:k8s-worker' state.highstate
 
 ~# kubectl get nodes
 NAME                STATUS    ROLES     AGE       VERSION   EXTERNAL-IP   OS-IMAGE 
