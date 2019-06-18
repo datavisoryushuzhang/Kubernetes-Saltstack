@@ -74,7 +74,7 @@ kubernetes:
     admin-token: Haim8kay1rarCHANGEMEHaim8kay11ra
     kubelet-token: ahT1eipae1wiCHANGEMEahT1eipa1e1w
     image-repository: 
-      dns: docker-registry.datavisor.cn
-      ip: 54.191.46.142
+      dns: docker-registry.datavisor.cn/library
+      ip: 52.83.236.125
   datavisor:
     dir: /opt/datavisor
