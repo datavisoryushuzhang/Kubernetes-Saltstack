@@ -15,7 +15,8 @@ kubernetes:
           etcd-member-name: etcd1
         - ipaddr: 10.201.38.35
           etcd-member-name: etcd2
-    encryption-key: 'w3RNESCMG+o3GCHTUcrQUUdq6CFV72q/Zik9LAO8uEc='
+    token: 'absdef.0123456789abcdef'
+    token-ttl: "0"
     certs-dir: /etc/kubernetes/pki
     etcd:
       version: v3.3.9
@@ -42,12 +43,6 @@ kubernetes:
       front-proxy-client-key: front-proxy-client.key
       sa-key: sa.key
       sa-public-key: sa.pub
-  worker:
-    runtime:
-      provider: docker
-      docker:
-        version: 18.03.0-ce
-        data-dir: /dockerFS
     networking:
       cni-version: v0.7.1
       provider: calico
@@ -67,6 +62,12 @@ kubernetes:
           nat: true
           interface: eth0
           range: fd80:24e2:f998:72d6::/64
+  worker:
+    runtime:
+      provider: docker
+      docker:
+        version: 18.03.0-ce
+        data-dir: /dockerFS
   global:
     clusterIP-range: 10.32.0.0/16
     helm-version: v2.10.0
@@ -76,5 +77,10 @@ kubernetes:
     image-repository: 
       dns: docker-registry.datavisor.cn/library
       ip: 52.83.236.125
+    cloud-provider: aws
+    external-etcd: true
+    kubeadm-lb-fqdn: internal-k8s-master-ha-lb-1634955003.cn-northwest-1.elb.amazonaws.com.cn
+    loadbalancer-apiserver:
+      port: 6443
   datavisor:
     dir: /opt/datavisor

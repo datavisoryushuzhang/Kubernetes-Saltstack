@@ -1,0 +1,47 @@
+#!jinja
+{%- set global = pillar['kubernetes']['global'] -%}
+{%- set master = pillar['kubernetes']['master'] -%}
+{%- set certDir = master['certs-dir'] -%}
+---
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: ClusterConfiguration
+kubernetesVersion: v1.13.6
+controllerManager:
+  extraArgs:
+    # listen 0.0.0.0 for potential Prometheus issues
+    address: 0.0.0.0
+    cloud-provider: {{ global['cloud-provider'] }}
+apiServer:
+  extraArgs:
+    cloud-provider: {{ global['cloud-provider'] }}
+scheduler:
+  extraArgs:
+    # listen 0.0.0.0 for potential Prometheus issues
+    address: 0.0.0.0
+{% if pillar['kubernetes']['global']['external-etcd'] %}
+etcd:
+  external:
+    endpoints:
+      {%- for endpoint in master['cluster']['nodes'] %}
+      - https://{{ endpoint.ipaddr }}:2379
+      {%- endfor %}
+    caFile: {{ certDir }}/{{ master.certs['etcd-ca-cert'] }}
+    certFile: {{ certDir }}/{{ master.certs['apiserver-etcd-client-cert'] }}
+    keyFile: {{ certDir }}/{{ master.certs['apiserver-etcd-client-key'] }}
+{% endif %}
+networking:
+  podSubnet: "{{ master['networking'][master['networking']['provider']]['ipv4']['range'] }}"
+{% if master.count > 1 %}
+controlPlaneEndpoint: {{ global['kubeadm-lb-fqdn'] }}:{{ global['loadbalancer-apiserver'].port | default(6443) }}
+{% endif %}
+imageRepository: "{{ global['image-repository'].dns }}"
+---
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: InitConfiguration
+bootstrapTokens:
+- token: "{{ master.token }}"
+  ttl: "{{ master['token-ttl']}}"
+nodeRegistration:
+  kubeletExtraArgs:
+    cloud-provider: {{ global['cloud-provider'] }}
+    pod-infra-container-image: "{{ global['image-repository'].dns }}/pause:3.1"

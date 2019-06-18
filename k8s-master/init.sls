@@ -1,96 +1,45 @@
 {%- set k8sVersion = pillar['kubernetes']['version'] -%}
 {%- set masterCount = pillar['kubernetes']['master']['count'] -%}
 {% set post_install_files = [
-  "coredns.yaml", "grafana.yaml", "heapster-rbac.yaml", "heapster.yaml",
-  "influxdb.yaml", "kube-dns.yaml", "kubernetes-dashboard.yaml",
-  "policy-controller.yaml", "rbac-calico.yaml", "rbac-tiller.yaml", "setup.sh"] %}
+  "calico.yml",
+  "grafana.yaml", 
+  "heapster-rbac.yaml", 
+  "heapster.yaml",
+  "kubernetes-dashboard.yaml", 
+  "setup.sh"] %}
+{%- set datavisorDir = pillar['kubernetes']['datavisor']['dir'] -%}
 
 include:
   - .etcd
 
-/usr/bin/kube-apiserver:
+{{ datavisorDir }}/kubeadm-ha.yaml
   file.managed:
-    - source: https://storage.googleapis.com/kubernetes-release/release/{{ k8sVersion }}/bin/linux/amd64/kube-apiserver
-    - skip_verify: true
-    - group: root
-    - mode: 755
-
-/usr/bin/kube-controller-manager:
-  file.managed:
-    - source: https://storage.googleapis.com/kubernetes-release/release/{{ k8sVersion }}/bin/linux/amd64/kube-controller-manager
-    - skip_verify: true
-    - group: root
-    - mode: 755
-
-/usr/bin/kube-scheduler:
-  file.managed:
-    - source: https://storage.googleapis.com/kubernetes-release/release/{{ k8sVersion }}/bin/linux/amd64/kube-scheduler
-    - skip_verify: true
-    - group: root
-    - mode: 755
-
-/usr/bin/kubectl:
-  file.managed:
-    - source: https://storage.googleapis.com/kubernetes-release/release/{{ k8sVersion }}/bin/linux/amd64/kubectl
-    - skip_verify: true
-    - group: root
-    - mode: 755
-{% if masterCount == 1 %}
-/etc/systemd/system/kube-apiserver.service:
-    file.managed:
-    - source: salt://{{ slspath }}/kube-apiserver.service
-    - user: root
-    - template: jinja
-    - group: root
-    - mode: 644
-{% elif masterCount == 3 %}
-/etc/systemd/system/kube-apiserver.service:
-    file.managed:
-    - source: salt://{{ slspath }}/kube-apiserver-ha.service
-    - user: root
-    - template: jinja
-    - group: root
-    - mode: 644
-{% endif %}
-
-/etc/systemd/system/kube-controller-manager.service:
-  file.managed:
-    - source: salt://{{ slspath }}/kube-controller-manager.service
+    - source: salt:// {{ slspath }}/kubeadm-ha.yaml.j2
     - user: root
     - template: jinja
     - group: root
     - mode: 644
 
-/etc/systemd/system/kube-scheduler.service:
-  file.managed:
-    - source: salt://{{ slspath }}/kube-scheduler.service
-    - user: root
-    - template: jinja
-    - group: root
-    - mode: 644
+/etc/systemd/system/kubelet.service.d/30-kubeadm.conf:
+  file.copy:
+    - source: /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
 
-/var/lib/kubernetes/encryption-config.yaml:
-    file.managed:
-    - source: salt://{{ slspath }}/encryption-config.yaml
-    - user: root
-    - template: jinja
-    - group: root
-    - mode: 644
+kubelet:
+  service.running:
+    - enable: True
+    - watch:
+      - file: /etc/systemd/system/kubelet.service.d/30-kubeadm.conf
 
-{%- set cniProvider = pillar['kubernetes']['worker']['networking']['provider'] -%}
-{% if cniProvider == "calico" %}
+init first master:
+  cmd.run:
+    - name: >-
+        kubeadm init
+        --config {{ datavisorDir }}/kubeadm-ha.yaml
+        --ignore-preflight-errors=all
 
-/opt/calico.yaml:
-    file.managed:
-    - source: salt://{{ slspath.split('/')[0] }}/k8s-worker/cni/calico/calico.tmpl.yaml
-    - user: root
-    - template: jinja
-    - group: root
-    - mode: 644
-{% endif %}
-
+{% if salt['grains.get']('fqdn_ip4') == pillar['kubernetes']['master']['cluster']['nodes'] | map(attribute='ipaddr') | list | first -%}
 {% for file in post_install_files %}
-/opt/kubernetes/post_install/{{ file }}:
+{{ datavisorDir }}/post_install/{{ file }}:
   file.managed:
   - source: salt://{{ slspath.split('/')[0] }}/post_install/{{ file }}
   - makedirs: true
@@ -104,21 +53,8 @@ include:
 {% endif %}
 {% endfor %}
 
-kube-apiserver:
-  service.running:
-    - enable: True
-    - watch:
-      - /etc/systemd/system/kube-apiserver.service
-      - /var/lib/kubernetes/kubernetes.pem
-kube-controller-manager:
-  service.running:
-    - enable: True
-    - watch:
-      - /etc/systemd/system/kube-controller-manager.service
-      - /var/lib/kubernetes/kubernetes.pem
-kube-scheduler:
-  service.running:
-   - enable: True
-   - watch:
-     - /etc/systemd/system/kube-scheduler.service
-     - /var/lib/kubernetes/kubernetes.pem
+{{ datavisorDir }}/post_intall/setup.sh:
+  cmd.script:
+    - env:
+      - KUBECONFIG: /etc/kubernetes/admin.conf
+{% endif %}
