@@ -9,9 +9,10 @@ kubelet:
     - enable: true
 
 join cluster:
-  cmd.run: >-
+  cmd.run:
     - name: >-
         kubeadm join
         {{ global['kubeadm-lb-fqdn'] }}:{{ global['loadbalancer-apiserver'].port }} 
-        --discovery-token-ca-cert-hash sha256:{{ pillar['ca-sha256'] }}
+        --discovery-token-ca-cert-hash sha256:{{ salt['mine.get']('role:k8s-master', 'ca-sha256', 'grain').itervalues().next() }}
         --token {{ master['token'] }}
+        --ignore-preflight-errors=all

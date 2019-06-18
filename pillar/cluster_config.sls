@@ -71,7 +71,7 @@ kubernetes:
   global:
     clusterIP-range: 10.32.0.0/16
     helm-version: v2.10.0
-    dashboard-version: v1.10.0
+    dashboard-version: v1.10.1
     image-repository: 
       dns: docker-registry.datavisor.cn/library
       ip: 52.83.236.125
@@ -82,3 +82,9 @@ kubernetes:
       port: 6443
   datavisor:
     dir: /opt/datavisor
+mine_functions:
+  ca-sha256: 
+    mine_function: cmd.shell
+    cmd: >-
+      openssl x509 -pubkey -in ./ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | awk '{print $2}'
+    cwd: /etc/kubernetes/pki 
