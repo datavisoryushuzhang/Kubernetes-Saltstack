@@ -1,6 +1,5 @@
 {%- set master = pillar['kubernetes']['master'] -%}
 {%- set datavisorDir = pillar['kubernetes']['datavisor']['dir'] -%}
-{%- set imageRepository = pillar['kubernetes']['global']['image-repository'] -%}
 {%- set nodes =  pillar['kubernetes']['master']['cluster']['nodes'] -%}
 {% if master.count == 1 %}
   {%  set etcdConfig = "kubeadm-etcd.yaml" %}
@@ -13,15 +12,6 @@
     - user: root
     - group: root
     - dir_mode: 750
-
-{% if imageRepository.ip -%}
-private-docker-registry:
-  host.present:
-    - ip: 
-      - {{ imageRepository.ip }}
-    - names:
-      - {{ imageRepository.dns | regex_replace('\/.*$', '') }}
-{%- endif %}
 
 /etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf:
   file.managed:

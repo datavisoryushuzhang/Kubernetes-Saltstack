@@ -10,6 +10,7 @@
 {%- set datavisorDir = pillar['kubernetes']['datavisor']['dir'] -%}
 
 include:
+  - ../k8s-common
   - .etcd
 
 {{ datavisorDir }}/kubeadm-ha.yaml:

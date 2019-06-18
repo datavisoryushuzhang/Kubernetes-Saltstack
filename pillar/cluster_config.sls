@@ -72,8 +72,6 @@ kubernetes:
     clusterIP-range: 10.32.0.0/16
     helm-version: v2.10.0
     dashboard-version: v1.10.0
-    admin-token: Haim8kay1rarCHANGEMEHaim8kay11ra
-    kubelet-token: ahT1eipae1wiCHANGEMEahT1eipa1e1w
     image-repository: 
       dns: docker-registry.datavisor.cn/library
       ip: 52.83.236.125

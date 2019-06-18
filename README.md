@@ -4,120 +4,34 @@ Kubernetes-Saltstack provide an easy way to deploy H/A **Kubernetes Cluster** us
 
 ## Features
 
-- Cloud-provider **agnostic**
+- Cloud-provider **aws, aliyun, azure**
 - Support **high-available** clusters
 - Use the power of **`Saltstack`**
 - Made for **`systemd`** based Linux systems
 - **Routed** networking by default (**`Calico`**)
 - **CoreDNS** as internal DNS provider
-- Latest Kubernetes release (**1.11.2**)
-- Support **IPv6**
 - Integrated **add-ons**
-- **Composable** (CNI, CRI)
 - **RBAC** & **TLS** by default
 
 ## Getting started 
 
-Let's clone the git repo on Salt-master and create CA & certificates on the `k8s-certs/` directory using **`CfSSL`** tools:
+Let's clone the git repo on Salt-master and create CA & certificates on the `k8s-certs/` directory using **`generate-ca-certs.sh`** scripts:
 
 ```bash
 git clone https://github.com/valentin2105/Kubernetes-Saltstack.git /srv/salt
 ln -s /srv/salt/pillar /srv/pillar
 
-wget -q --show-progress --https-only --timestamping \
-   https://pkg.cfssl.org/R1.2/cfssl_linux-amd64 \
-   https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64
-
-chmod +x cfssl_linux-amd64 cfssljson_linux-amd64
-sudo mv cfssl_linux-amd64 /usr/local/bin/cfssl
-sudo mv cfssljson_linux-amd64 /usr/local/bin/cfssljson
-```
-
-### IMPORTANT Point
-
-Because we need to generate our own CA and certificates for the cluster, You MUST put **every hostnames of the Kubernetes cluster** (master & workers) in the `certs/kubernetes-csr.json` (`hosts` field). You can also modify the `certs/*json` files to match your cluster-name / country. (optional)  
-
-You can use either public or private names, but they must be registered somewhere (DNS provider, internal DNS server, `/etc/hosts` file).
-
-```bash
 cd /srv/salt/k8s-certs
-cfssl gencert -initca ca-csr.json | cfssljson -bare ca
-
-# Don't forget to edit kubernetes-csr.json before this point !
-
-cfssl gencert \
-  -ca=ca.pem \
-  -ca-key=ca-key.pem \
-  -config=ca-config.json \
-  -profile=kubernetes \
-  kubernetes-csr.json | cfssljson -bare kubernetes
+generate-ca-certs.sh
 ```
-After that, edit the `pillar/cluster_config.sls` to configure your future Kubernetes cluster :
-
-```yaml
-kubernetes:
-  version: v1.11.2
-  domain: cluster.local
-  master:
-#    count: 1
-#    hostname: master.domain.tld
-#    ipaddr: 10.240.0.10
-    count: 3
-    cluster:
-      node01:
-        hostname: master01.domain.tld
-        ipaddr: 10.240.0.10
-      node02:
-        hostname: master02.domain.tld
-        ipaddr: 10.240.0.20
-      node03:
-        hostname: master03.domain.tld
-        ipaddr: 10.240.0.30
-    encryption-key: 'w3RNESCMG+o3GCHTUcrCHANGEMEq6CFV72q/Zik9LAO8uEc='
-    etcd:
-      version: v3.3.9
-  worker:
-    runtime:
-      provider: docker
-      docker:
-        version: 18.03.0-ce
-        data-dir: /dockerFS
-    networking:
-      cni-version: v0.7.1
-      provider: calico
-      calico:
-        version: v3.2.1
-        cni-version: v3.2.1
-        calicoctl-version: v3.2.1
-        controller-version: 3.2-release
-        as-number: 64512
-        token: hu0daeHais3aCHANGEMEhu0daeHais3a
-        ipv4:
-          range: 192.168.0.0/16
-          nat: true
-          ip-in-ip: true
-        ipv6:
-          enable: false
-          nat: true
-          interface: ens18
-          range: fd80:24e2:f998:72d6::/64
-  global:
-    clusterIP-range: 10.32.0.0/16
-    helm-version: v2.10.0
-    dashboard-version: v1.10.0
-    admin-token: Haim8kay1rarCHANGEMEHaim8kay1rar
-    kubelet-token: ahT1eipae1wiCHANGEMEahT1eipae1wi
-```
-##### Don't forget to change hostnames & tokens  using command like `pwgen 64` !
-
-If you want to enable IPv6 on pod's side, you need to change `kubernetes.worker.networking.calico.ipv6.enable` to `true`.
+After that, edit the `pillar/cluster_config.sls` to configure your future Kubernetes cluster.
 
 ## Deployment
 
 To deploy your Kubernetes cluster using this formula, you first need to setup your Saltstack master/Minion.  
 You can use [Salt-Bootstrap](https://docs.saltstack.com/en/stage/topics/tutorials/salt_bootstrap.html) or [Salt-Cloud](https://docs.saltstack.com/en/latest/topics/cloud/) to enhance the process. 
 
-The configuration is done to use the Salt-master as the Kubernetes master. You can have them as different nodes if needed but the `post_install/script.sh` require `kubectl` and access to the `pillar` files.
+The configuration is done to use the Salt-master as the Kubernetes master. You can have them as different nodes if needed but the `post_install/setup.sh` require `kubectl` and access to the `pillar` files.
 
 #### The recommended configuration is :
 
@@ -147,14 +61,14 @@ role:
   - k8s-worker
 EOF
 
-service salt-minion restart 
+systemctl restart salt-minion 
 ```
 
 After that, you can apply your configuration (`highstate`) :
 
 ```bash
 # Apply Kubernetes master configurations
-salt -G 'role:k8s-master' state.highstate 
+salt -G 'role:k8s-master' state.highstate
 
 ~# kubectl get componentstatuses
 NAME                 STATUS    MESSAGE              ERROR
@@ -165,7 +79,7 @@ etcd-1               Healthy   {"health": "true"}
 etcd-2               Healthy   {"health": "true"}
 
 # Apply Kubernetes worker configurations
-salt -G 'role:k8s-worker' state.highstate
+salt -G 'role:k8s-worker' state.highstate pillar='{"ca-sha256": "${CA_SHA256}"}'
 
 ~# kubectl get nodes
 NAME                STATUS    ROLES     AGE       VERSION   EXTERNAL-IP   OS-IMAGE 
@@ -175,7 +89,7 @@ k8s-salt-worker03   Ready     <none>     5m       v1.11.2    <none>        Ubunt
 k8s-salt-worker04   Ready     <none>     5m       v1.11.2    <none>        Ubuntu 18.04.1 LTS 
 ```
 
-To enable add-ons on the Kubernetes cluster, you can launch the `post_install/setup.sh` script :
+Add-ons will be created on the Kubernetes cluster, you can check the `post_install/setup.sh` script :
 
 ```bash
 /srv/salt/post_install/setup.sh
