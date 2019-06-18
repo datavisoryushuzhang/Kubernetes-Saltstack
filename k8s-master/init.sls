@@ -1,7 +1,7 @@
 {%- set k8sVersion = pillar['kubernetes']['version'] -%}
 {%- set masterCount = pillar['kubernetes']['master']['count'] -%}
 {% set post_install_files = [
-  "calico.yml",
+  "calico.yaml",
   "grafana.yaml", 
   "heapster-rbac.yaml", 
   "heapster.yaml",
@@ -12,9 +12,9 @@
 include:
   - .etcd
 
-{{ datavisorDir }}/kubeadm-ha.yaml
+{{ datavisorDir }}/kubeadm-ha.yaml:
   file.managed:
-    - source: salt:// {{ slspath }}/kubeadm-ha.yaml.j2
+    - source: salt://{{ slspath }}/kubeadm-ha.yaml.j2
     - user: root
     - template: jinja
     - group: root
@@ -24,24 +24,25 @@ include:
   file.copy:
     - source: /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
 
-kubelet:
+Cluster kubelet:
   service.running:
+    - name: kubelet
     - enable: True
     - watch:
       - file: /etc/systemd/system/kubelet.service.d/30-kubeadm.conf
 
-init first master:
+init master:
   cmd.run:
     - name: >-
         kubeadm init
         --config {{ datavisorDir }}/kubeadm-ha.yaml
         --ignore-preflight-errors=all
 
-{% if salt['grains.get']('fqdn_ip4') == pillar['kubernetes']['master']['cluster']['nodes'] | map(attribute='ipaddr') | list | first -%}
+{% if salt['grains.get']('fqdn_ip4') | first  == pillar['kubernetes']['master']['cluster']['nodes'] | map(attribute='ipaddr') | list | first -%}
 {% for file in post_install_files %}
 {{ datavisorDir }}/post_install/{{ file }}:
   file.managed:
-  - source: salt://{{ slspath.split('/')[0] }}/post_install/{{ file }}
+  - source: salt://post_install/{{ file }}
   - makedirs: true
   - template: jinja
   - user: root
@@ -53,8 +54,10 @@ init first master:
 {% endif %}
 {% endfor %}
 
-{{ datavisorDir }}/post_intall/setup.sh:
+execute post_install:
   cmd.script:
+    - name: {{ datavisorDir }}/post_install/setup.sh
+    - cwd: {{ datavisorDir }}/post_install
     - env:
       - KUBECONFIG: /etc/kubernetes/admin.conf
 {% endif %}

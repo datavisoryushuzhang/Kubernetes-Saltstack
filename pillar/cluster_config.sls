@@ -25,10 +25,10 @@ kubernetes:
       etcd-ca-key: etcd/ca.key
       server-cert: etcd/server.crt
       server-key: etcd/server.key
-      healthcheck-cert: etcd/healthcheck.crt
-      healthcheck-key: etcd/healthcheck.key
-      client-cert: etcd/client.crt
-      client-key: etcd/client.key
+      healthcheck-cert: etcd/healthcheck-client.crt
+      healthcheck-key: etcd/healthcheck-client.key
+      client-cert: etcd/peer.crt
+      client-key: etcd/peer.key
       apiserver-etcd-client-cert: apiserver-etcd-client.crt
       apiserver-etcd-client-key: apiserver-etcd-client.key
       apiserver-cert: apiserver.crt

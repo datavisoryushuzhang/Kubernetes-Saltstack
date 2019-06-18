@@ -41,8 +41,9 @@ service.systemctl_reload:
     - onchanges:
       - file: /etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf
 
-kubelet:
+etcd kubelet:
   service.running:
+    - name: kubelet
     - enable: True
     - watch:
       - file: /etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf
