@@ -1,11 +1,11 @@
-#!jinja
 {%- set global = pillar['kubernetes']['global'] -%}
 {%- set master = pillar['kubernetes']['master'] -%}
 {%- set certDir = master['certs-dir'] -%}
 ---
-apiVersion: kubeadm.k8s.io/v1beta1
+apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
 kubernetesVersion: v1.13.6
+clusterName: {{ master.cluster.name }}
 controllerManager:
   extraArgs:
     # listen 0.0.0.0 for potential Prometheus issues
@@ -31,9 +31,10 @@ etcd:
 {% endif %}
 networking:
   podSubnet: "{{ master['networking'][master['networking']['provider']]['ipv4']['range'] }}"
-{% if master.count > 1 %}
+{% if master.count > 1 -%}
 controlPlaneEndpoint: {{ global['kubeadm-lb-fqdn'] }}:{{ global['loadbalancer-apiserver'].port | default(6443) }}
-{% endif %}
+{%- endif %}
+certificatesDir: {{ certDir }}
 imageRepository: "{{ global['image-repository'].dns }}"
 ---
 apiVersion: kubeadm.k8s.io/v1beta1
@@ -42,6 +43,8 @@ bootstrapTokens:
 - token: "{{ master.token }}"
   ttl: "{{ master['token-ttl']}}"
 nodeRegistration:
+  ignorePreflightErrors: 
+    - all
   kubeletExtraArgs:
     cloud-provider: {{ global['cloud-provider'] }}
     pod-infra-container-image: "{{ global['image-repository'].dns }}/pause:3.1"

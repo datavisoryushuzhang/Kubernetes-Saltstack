@@ -7,18 +7,18 @@
   "heapster.yaml",
   "kubernetes-dashboard.yaml", 
   "setup.sh"] %}
-{%- set datavisorDir = pillar['kubernetes']['datavisor']['dir'] -%}
+{%- set datavisor = salt['grains.get']('datavisor') -%}
 
 include:
   - ../k8s-common
   - .etcd
 
-{{ datavisorDir }}/kubeadm-ha.yaml:
+{{ datavisor.dir }}/kubeadm-ha.yaml:
   file.managed:
     - source: salt://{{ slspath }}/kubeadm-ha.yaml.j2
-    - user: root
+    - user: {{ datavisor.user }}
     - template: jinja
-    - group: root
+    - group: {{ datavisor.user }}
     - mode: 644
 
 /etc/systemd/system/kubelet.service.d/30-kubeadm.conf:
@@ -36,18 +36,18 @@ init master:
   cmd.run:
     - name: >-
         kubeadm init
-        --config {{ datavisorDir }}/kubeadm-ha.yaml
+        --config {{ datavisor.dir }}/kubeadm-ha.yaml
         --ignore-preflight-errors=all
 
 {% if salt['grains.get']('fqdn_ip4') | first  == pillar['kubernetes']['master']['cluster']['nodes'] | map(attribute='ipaddr') | list | first -%}
 {% for file in post_install_files %}
-{{ datavisorDir }}/post_install/{{ file }}:
+{{ datavisor.dir }}/post_install/{{ file }}:
   file.managed:
   - source: salt://post_install/{{ file }}
   - makedirs: true
   - template: jinja
-  - user: root
-  - group: root
+  - user: {{ datavisor.user }}
+  - group: {{ datavisor.user }}
 {% if file == "setup.sh" %}
   - mode: 755
 {% else %}
@@ -57,8 +57,8 @@ init master:
 
 execute post_install:
   cmd.script:
-    - name: {{ datavisorDir }}/post_install/setup.sh
-    - cwd: {{ datavisorDir }}/post_install
+    - name: {{ datavisor.dir }}/post_install/setup.sh
+    - cwd: {{ datavisor.dir }}/post_install
     - env:
       - KUBECONFIG: /etc/kubernetes/admin.conf
 {% endif %}

@@ -1,5 +1,5 @@
 {%- set master = pillar['kubernetes']['master'] -%}
-{%- set datavisorDir = pillar['kubernetes']['datavisor']['dir'] -%}
+{%- set datavisor = salt['grains.get']('datavisor') -%}
 {%- set nodes =  pillar['kubernetes']['master']['cluster']['nodes'] -%}
 {% if master.count == 1 %}
   {%  set etcdConfig = "kubeadm-etcd.yaml" %}
@@ -7,11 +7,11 @@
   {% set etcdConfig = "kubeadm-etcd-ha.yaml" %}
 {% endif %}
 
-/etc/etcd:
-  file.directory:
-    - user: root
-    - group: root
-    - dir_mode: 750
+# {{ datavisor.dir }}/etcd:
+#   file.directory:
+#     - user: root
+#     - group: root
+#     - dir_mode: 750
 
 /etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf:
   file.managed:
@@ -38,7 +38,7 @@ etcd kubelet:
     - watch:
       - file: /etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf
 
-{{ datavisorDir  }}/{{ etcdConfig }}:
+{{ datavisor.dir  }}/{{ etcdConfig }}:
   file.managed:
     - source: salt://{{ slspath }}/{{ etcdConfig  }}.j2
     - user: root
@@ -58,7 +58,7 @@ remove old {{ key }}:
 generate {{ cert }}:
   cmd.run:
     - name: >-
-        kubeadm init phase certs {{ cert }} --config {{ datavisorDir }}/{{ etcdConfig }}
+        kubeadm init phase certs {{ cert }} --config {{ datavisor.dir }}/{{ etcdConfig }}
 {% endfor %}
 
 start etcd:
@@ -67,7 +67,7 @@ start etcd:
         kubeadm init
         phase etcd
         local
-        --config={{ datavisorDir }}/{{ etcdConfig }}
+        --config={{ datavisor.dir }}/{{ etcdConfig }}
 
 
 

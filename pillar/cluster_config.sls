@@ -17,9 +17,10 @@ kubernetes:
           etcd-member-name: etcd2
     token: 'absdef.0123456789abcdef'
     token-ttl: "0"
-    certs-dir: /etc/kubernetes/pki
+    certs-dir: {{ salt['grains.get']('datavisor:dir') }}/kubernetes/pki
     etcd:
       version: v3.3.9
+      data-dir: {{ salt['grains.get']('datavisor:dir') }}/etcd/data
     certs:
       etcd-ca-cert: etcd/ca.crt
       etcd-ca-key: etcd/ca.key
@@ -80,8 +81,6 @@ kubernetes:
     kubeadm-lb-fqdn: internal-k8s-master-ha-lb-1634955003.cn-northwest-1.elb.amazonaws.com.cn
     loadbalancer-apiserver:
       port: 6443
-  datavisor:
-    dir: /opt/datavisor
 mine_functions:
   ca-sha256: 
     mine_function: cmd.shell

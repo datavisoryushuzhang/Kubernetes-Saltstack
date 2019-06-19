@@ -1,9 +1,10 @@
-{% set certDir = pillar['kubernetes']['master']['certs-dir'] %}
+{%- set certDir = pillar['kubernetes']['master']['certs-dir'] -%}
+{%- set datavisor = salt['grains.get']('datavisor') -%}
 
 {{ certDir }}:
   file.directory:
-    - user: root
-    - group: root
+    - user: {{ datavisor.user }}
+    - group: {{ datavisor.user }}
     - dir_mode: 750
 
 {% for key, value in pillar['kubernetes']['master']['certs'].iteritems() %}
