@@ -15,6 +15,7 @@ private-docker-registry:
     - user: {{ datavisor.user }}
     - group: {{ datavisor.user }}
     - mode: 750
+    - makedirs: True
     - recurse:
       - user
       - group

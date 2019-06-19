@@ -11,7 +11,7 @@ kubelet:
 
 {{ datavisor.dir }}/kubernetes/config/kubeadm-worker.yaml:
   file.managed:
-    - source: salt://{{ slspath }}/k8s-worker/kubeadm-worker.yaml.j2
+    - source: salt://{{ slspath }}/kubeadm-worker.yaml.j2
     - template: jinja
     - user: {{ datavisor.user }}
     - group: {{ datavisor.user }}
@@ -21,5 +21,5 @@ join cluster:
   cmd.run:
     - name: >-
         kubeadm join
-        --config {{ datavisor.dir }}/kubeadm-worker.yaml
+        --config {{ datavisor.dir }}/kubernetes/config/kubeadm-worker.yaml
         --ignore-preflight-errors=all
