@@ -44,7 +44,7 @@ init master:
 /home/{{ datavisor.user }}/.kube/config:
   file.copy:
     - source: /etc/kubernetes/admin.conf
-    - makeDirs: true
+    - makedirs: True
     - user: {{ datavisor.user }}
     - group: {{ datavisor.user }}
     - mode: 644
