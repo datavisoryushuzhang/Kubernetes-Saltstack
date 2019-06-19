@@ -41,6 +41,12 @@ init master:
         --config {{ datavisor.dir }}/kubeadm-ha.yaml
         --ignore-preflight-errors=all
 
+/home/{{ datavisor.user }}/.kube:
+  file.directory:
+    - user: {{ datavisor.user }}
+    - group: {{ datavisor.user }}
+    - mode: 755
+
 /home/{{ datavisor.user }}/.kube/config:
   file.copy:
     - source: /etc/kubernetes/admin.conf
@@ -48,7 +54,6 @@ init master:
     - user: {{ datavisor.user }}
     - group: {{ datavisor.user }}
     - mode: 644
-    - dir_mode: 750
 
 {% if salt['grains.get']('fqdn_ip4') | first  == pillar['kubernetes']['master']['cluster']['nodes'] | map(attribute='ipaddr') | list | first -%}
 {% for file in post_install_files %}
