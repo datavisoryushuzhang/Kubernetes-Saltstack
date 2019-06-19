@@ -1,4 +1,5 @@
 {%- set imageRepository = pillar['kubernetes']['global']['image-repository'] -%}
+{%- set datavisor = salt['grains.get']('datavisor') -%}
 
 {% if imageRepository.ip -%}
 private-docker-registry:
