@@ -13,7 +13,7 @@
 {%- set certDir = pillar['kubernetes']['master']['certs-dir'] -%}
 {%- set etcd = pillar['kubernetes']['master']['etcd'] -%}
 
-apiVersion: "kubeadm.k8s.io/v1beta2"
+apiVersion: "kubeadm.k8s.io/v1beta1"
 kind: ClusterConfiguration
 kubernetesVersion: v1.13.6
 etcd:

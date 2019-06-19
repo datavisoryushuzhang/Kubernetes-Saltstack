@@ -2,7 +2,7 @@
 {%- set master = pillar['kubernetes']['master'] -%}
 {%- set certDir = master['certs-dir'] -%}
 ---
-apiVersion: kubeadm.k8s.io/v1beta2
+apiVersion: kubeadm.k8s.io/v1beta1
 kind: JoinConfiguration
 nodeRegistration:
   kubeletExtraArgs:

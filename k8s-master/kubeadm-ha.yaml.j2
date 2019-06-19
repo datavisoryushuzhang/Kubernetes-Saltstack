@@ -2,7 +2,7 @@
 {%- set master = pillar['kubernetes']['master'] -%}
 {%- set certDir = master['certs-dir'] -%}
 ---
-apiVersion: kubeadm.k8s.io/v1beta2
+apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
 kubernetesVersion: v1.13.6
 clusterName: {{ master.cluster.name }}
