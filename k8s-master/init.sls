@@ -38,6 +38,7 @@ init master:
     - name: >-
         kubeadm init
         --config {{ datavisor.dir }}/kubeadm-ha.yaml
+        --ignore-preflight-errors=all
 
 {% if salt['grains.get']('fqdn_ip4') | first  == pillar['kubernetes']['master']['cluster']['nodes'] | map(attribute='ipaddr') | list | first -%}
 {% for file in post_install_files %}

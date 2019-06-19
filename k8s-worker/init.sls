@@ -22,3 +22,4 @@ join cluster:
     - name: >-
         kubeadm join
         --config {{ datavisor.dir }}/kubeadm-worker.yaml
+        --ignore-preflight-errors=all
