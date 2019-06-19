@@ -16,6 +16,7 @@
 /etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf:
   file.managed:
     - source: salt://{{ slspath }}/20-etcd-service-manager.conf.j2
+    - makedirs: True
     - user: root
     - template: jinja
     - group: root

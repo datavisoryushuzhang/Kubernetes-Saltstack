@@ -24,6 +24,7 @@ include:
 /etc/systemd/system/kubelet.service.d/30-kubeadm.conf:
   file.copy:
     - source: /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
+    - makedirs: True
 
 Cluster kubelet:
   service.running:
