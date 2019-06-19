@@ -1,0 +1,19 @@
+{%- set global = pillar['kubernetes']['global'] -%}
+{%- set master = pillar['kubernetes']['master'] -%}
+{%- set certDir = master['certs-dir'] -%}
+---
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: JoinConfiguration
+nodeRegistration:
+  kubeletExtraArgs:
+    cloud-provider: {{ global['cloud-provider'] }}
+    pod-infra-container-image: "{{ global['image-repository'].dns }}/pause:3.1"
+  ignorePreflightErrors: 
+    - all
+caCertPath: {{ certDir }}/{{ master.certs['ca-cert']}}
+discovery:
+  bootstrapToken:
+    token: {{ master['token'] }}
+    apiServerEndpoint: {{ global['kubeadm-lb-fqdn'] }}:{{ global['loadbalancer-apiserver'].port }} 
+    caCertHashes:
+      - "sha256:{{ salt['mine.get']('role:k8s-master', 'ca-sha256', 'grain').itervalues().next() }}"
