@@ -12,7 +12,8 @@
 {{ certDir }}/{{value}}:
   file.managed:
     - source:  salt://{{ slspath }}/{{value}}
-    - group: root
+    - group: {{ datavisor.user }}
+    - user: {{ datavisor.user }}
     - mode: 644
     - makedirs: True
 {% endif%}

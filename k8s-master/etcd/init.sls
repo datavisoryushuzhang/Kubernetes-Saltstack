@@ -42,9 +42,9 @@ etcd kubelet:
 {{ datavisor.dir  }}/{{ etcdConfig }}:
   file.managed:
     - source: salt://{{ slspath }}/{{ etcdConfig  }}.j2
-    - user: root
+    - user: {{ datavisor.user }}
     - template: jinja
-    - group: root
+    - group: {{ datavisor.user }}
     - mode: 644
 
 {% for key, value in master.certs.iteritems() -%}
