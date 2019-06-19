@@ -48,6 +48,7 @@ init master:
     - user: {{ datavisor.user }}
     - group: {{ datavisor.user }}
     - mode: 644
+    - dir_mode: 750
 
 {% if salt['grains.get']('fqdn_ip4') | first  == pillar['kubernetes']['master']['cluster']['nodes'] | map(attribute='ipaddr') | list | first -%}
 {% for file in post_install_files %}
