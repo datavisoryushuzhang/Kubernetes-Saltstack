@@ -8,6 +8,7 @@ kubectl apply -f calico.yaml
 #kubectl apply -f kube-dns.yaml
 # kubectl apply -f coredns.yaml
 kubectl apply -f kubernetes-dashboard.yaml
+kubectl apply -f kubernetes-dashboard-admin-user.yaml
 
 kubectl apply -f heapster-rbac.yaml
 # kubectl apply -f influxdb.yaml

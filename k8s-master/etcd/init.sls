@@ -39,7 +39,7 @@ etcd kubelet:
     - watch:
       - file: /etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf
 
-{{ datavisor.dir  }}/{{ etcdConfig }}:
+{{ datavisor.dir  }}/kubernetes/config/{{ etcdConfig }}:
   file.managed:
     - source: salt://{{ slspath }}/{{ etcdConfig  }}.j2
     - user: {{ datavisor.user }}

@@ -5,7 +5,8 @@
   "grafana.yaml", 
   "heapster-rbac.yaml", 
   "heapster.yaml",
-  "kubernetes-dashboard.yaml", 
+  "kubernetes-dashboard.yaml",
+  "kubernetes-dashboard-admin-user.yaml", 
   "setup.sh"] %}
 {%- set datavisor = salt['grains.get']('datavisor') -%}
 
@@ -13,7 +14,7 @@ include:
   - ../k8s-common
   - .etcd
 
-{{ datavisor.dir }}/kubeadm-ha.yaml:
+{{ datavisor.dir }}/kubernetes/config/kubeadm-ha.yaml:
   file.managed:
     - source: salt://{{ slspath }}/kubeadm-ha.yaml.j2
     - user: {{ datavisor.user }}
@@ -39,6 +40,14 @@ init master:
         kubeadm init
         --config {{ datavisor.dir }}/kubeadm-ha.yaml
         --ignore-preflight-errors=all
+
+/home/{{ datavisor.user }}/.kube/config:
+  file.copy:
+    - source: /etc/kubernetes/admin.conf
+    - makeDirs: true
+    - user: {{ datavisor.user }}
+    - group: {{ datavisor.user }}
+    - mode: 644
 
 {% if salt['grains.get']('fqdn_ip4') | first  == pillar['kubernetes']['master']['cluster']['nodes'] | map(attribute='ipaddr') | list | first -%}
 {% for file in post_install_files %}

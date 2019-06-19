@@ -9,7 +9,7 @@ kubelet:
   service.running:
     - enable: true
 
-{{ datavisor.dir }}/kubeadm-worker.yaml:
+{{ datavisor.dir }}/kubernetes/config/kubeadm-worker.yaml:
   file.managed:
     - source: salt://{{ slspath }}/k8s-worker/kubeadm-worker.yaml.j2
     - template: jinja
