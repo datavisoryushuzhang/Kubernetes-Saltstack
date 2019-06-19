@@ -46,3 +46,4 @@ nodeRegistration:
   kubeletExtraArgs:
     cloud-provider: {{ global['cloud-provider'] }}
     pod-infra-container-image: "{{ global['image-repository'].dns }}/pause:3.1"
+    client-ca-file: {{ certDir }}/{{ master.certs['ca-cert']}}
